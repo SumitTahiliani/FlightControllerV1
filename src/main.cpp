@@ -48,7 +48,7 @@ void loop() {
     float accelVelocityY = mpu.getVelocityY(); // Get smoothed accelerometer Y velocity
 
     // Calculate accelerometer-based angle
-    float accelAngleX = atan2(accelVelocityY, accelVelocityX) * 180.0 / PI;
+    float accelAngleX = atan2(accelVelocityY, accelVelocityX);
 
     // Complementary filter to combine gyro and accelerometer
     float rollAngle = ACCEL_WEIGHT * accelAngleX + GYRO_WEIGHT * gyroAngleX;
