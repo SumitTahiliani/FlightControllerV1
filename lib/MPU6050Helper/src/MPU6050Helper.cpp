@@ -52,13 +52,14 @@ void MPU6050Helper::update() {
 
     float smoothedAccelX = movingAverage(accelXBuffer, accel.acceleration.x, 10);
     float smoothedAccelY = movingAverage(accelYBuffer, accel.acceleration.y, 10);
+    float smoothedAccelZ = movingAverage(accelZBuffer, accel.acceleration.z, 10 );
 
     velocityX += smoothedAccelX * deltaTime;
     velocityY += smoothedAccelY * deltaTime;
 }
 
 float MPU6050Helper::getAngleX() const {
-    return currentAngleX;
+    return currentAngleX;               
 }
 
 float MPU6050Helper::getAngleY() const {
@@ -72,17 +73,25 @@ float MPU6050Helper::getVelocityX() const {
 float MPU6050Helper::getVelocityY() const {
     return velocityY;
 }
+float MPU6050Helper::getAccelX() const {
+    return smoothedAccelX;
+}
+float MPU6050Helper::getAccelY() const {
+    return smoothedAccelY;
+}
+float MPU6050Helper::getAccelZ() const {
+    return smoothedAccelZ;
+}
 
 float MPU6050Helper::movingAverage(std::deque<float>& buffer, float newValue, size_t windowSize) {
-    static float runningSum = 0.0;  
-    
-    runningSum += newValue;
-    buffer.push_back(newValue);
-    
+    buffer.push_back(newValue); 
     if (buffer.size() > windowSize) {
-        runningSum -= buffer.front();
         buffer.pop_front();
     }
-    
-    return runningSum / buffer.size();
+
+    float sum = 0.0;
+    for (float value : buffer) {
+        sum += value;
+    }
+    return sum / buffer.size();
 }

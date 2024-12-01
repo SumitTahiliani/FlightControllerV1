@@ -3,8 +3,8 @@
 #include "BMP280Helper.h"
 
 // Pin configuration for MPU6050
-#define SDA_PIN 18
-#define SCL_PIN 19
+#define SDA_PIN 21
+#define SCL_PIN 22
 
 // Constants for complementary filter tuning
 #define GYRO_WEIGHT 0.98  // Gyroscope weight
@@ -13,15 +13,18 @@
 #define BMP280_I2C_ADDRESS 0x76
 #define SEA_LEVEL_PRESSURE 1013.25 // hPa
 
-MPU6050Helper mpu(SDA_PIN, SCL_PIN, 0.024, 0.06, GYRO_WEIGHT, ACCEL_WEIGHT);
+MPU6050Helper mpu(SDA_PIN, SCL_PIN, 0.024, -0.06, GYRO_WEIGHT, ACCEL_WEIGHT);
 BMP280Helper bmp(BMP280_I2C_ADDRESS);
+
+float roll = 0.0;
+float pitch = 0.0;
 
 void setup() {
     Serial.begin(115200);
 
     if (!mpu.begin()) {
         Serial.println("Failed to initialize MPU6050!");
-        while (1); 
+        while (1) delay(10); 
     } else {
         Serial.println("MPU6050 initialized!");
     }
@@ -42,22 +45,35 @@ void setup() {
 void loop() {
     mpu.update();
 
-    float gyroAngleX = mpu.getAngleX();
-    float gyroAnglelY = mpu.getAngleY();
-    float accelVelocityX = mpu.getVelocityX(); // Get smoothed accelerometer X velocity
-    float accelVelocityY = mpu.getVelocityY(); // Get smoothed accelerometer Y velocity
+    //current angle values equivalent to roll_rate * deltaTime
+    float gyroRoll = mpu.getAngleX();      
+    float gyroPitch = mpu.getAngleY();
+
+    //last estimate + current_angle to feed into complimentary filter
+    float gyroRollEstimate = gyroRoll + roll;      
+    float gyroPitchEstimate = gyroPitch + pitch;
+
+    //raw acceleretometer values in m/s2
+    float accelX = mpu.getAccelX();
+    float accelY = mpu.getAccelY();
+    float accelZ = mpu.getAccelZ();
+    float g = 9.81;
 
     // Calculate accelerometer-based angle
-    float accelAngleX = atan2(accelVelocityY, accelVelocityX);
+    float accelRoll = atan2(accelY, accelZ);
+    float accelPitch = atan2(-accelX, sqrt(accelY * accelY + accelZ * accelZ));
 
     // Complementary filter to combine gyro and accelerometer
-    float rollAngle = ACCEL_WEIGHT * accelAngleX + GYRO_WEIGHT * gyroAngleX;
+    roll = GYRO_WEIGHT * gyroRollEstimate + ACCEL_WEIGHT * accelRoll;
+    pitch = GYRO_WEIGHT * gyroPitchEstimate + ACCEL_WEIGHT * accelPitch;
 
     float relativeHeight = bmp.getRelativeHeight(SEA_LEVEL_PRESSURE);
 
-    Serial.print("Roll Angle: ");
-    Serial.print(rollAngle);
-    Serial.print("° | Relative Height: ");
+    Serial.print("Roll (radians): ");
+    Serial.println(roll); // Convert radians to degrees
+    Serial.print(" | Pitch (radians): ");
+    Serial.print(pitch); // Convert radians to degrees
+    Serial.print(" | Relative Height: ");
     Serial.print(relativeHeight);
     Serial.println(" m");
 

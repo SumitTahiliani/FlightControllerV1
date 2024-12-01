@@ -18,6 +18,9 @@ public:
     float getAngleY() const;
     float getVelocityX() const;
     float getVelocityY() const;
+    float getAccelX() const;
+    float getAccelY() const;
+    float getAccelZ() const;
 
 private:
     uint8_t sdaPin;
@@ -37,6 +40,10 @@ private:
     float lastGyroX;
     float lastGyroY;
 
+    float smoothedAccelX;
+    float smoothedAccelY;
+    float smoothedAccelZ;
+
     bool firstRun;
     unsigned long prevTime;
 
@@ -44,6 +51,7 @@ private:
     std::deque<float> gyroYBuffer;
     std::deque<float> accelXBuffer;
     std::deque<float> accelYBuffer;
+    std::deque<float> accelZBuffer;
 
     float movingAverage(std::deque<float>& buffer, float newValue, size_t windowSize);
 };
